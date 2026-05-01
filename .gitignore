@@ -1,0 +1,22 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.*
+
+# Next.js
+.next/
+out/
+build/
+
+# Environment Variables
+.env*
+!.env.example
+
+# IDE
+.idea/
+.vscode/
+
+# Misc
+.DS_Store
+*.pem
+*.log
