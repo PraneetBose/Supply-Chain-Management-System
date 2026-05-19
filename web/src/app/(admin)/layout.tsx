@@ -1,5 +1,6 @@
 import { createClient } from '@/utils/supabase/server'
 import Link from 'next/link'
+import { ORDER_STATUS } from '@/lib/constants'
 
 export default async function AdminLayout({
     children,
@@ -10,7 +11,7 @@ export default async function AdminLayout({
     const { data: { user } } = await supabase.auth.getUser()
 
     // Get pending order count for the notification badge
-    const { count } = await supabase.from('orders').select('*', { count: 'exact', head: true }).eq('status', 'pending')
+    const { count } = await supabase.from('orders').select('*', { count: 'exact', head: true }).eq('status', ORDER_STATUS.PENDING)
 
     return (
         <div className="flex h-screen bg-zinc-950 font-sans text-white overflow-hidden">

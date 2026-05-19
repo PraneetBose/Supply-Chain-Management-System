@@ -2,6 +2,7 @@
 
 import { createClient } from '@/utils/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { ORDER_STATUS } from '@/lib/constants'
 
 export async function submitOrder(moduleId: string, custId: string) {
     const supabase = await createClient()
@@ -12,7 +13,7 @@ export async function submitOrder(moduleId: string, custId: string) {
         .select('id')
         .eq('cust_id', custId)
         .eq('module_id', moduleId)
-        .in('status', ['pending', 'approved'])
+        .in('status', [ORDER_STATUS.PENDING, ORDER_STATUS.APPROVED])
         .maybeSingle()
 
     if (existing) {
@@ -25,7 +26,7 @@ export async function submitOrder(moduleId: string, custId: string) {
         .insert({
             cust_id: custId,
             module_id: moduleId,
-            status: 'pending'
+            status: ORDER_STATUS.PENDING
         })
 
     if (error) {
@@ -77,16 +78,16 @@ export async function approveModuleAccess(formData: FormData) {
 
     if (declineOrder && orderId) {
         if (formData.get('isFinalDecline') === 'true') {
-            await supabase.from('orders').update({ status: 'rejected' }).eq('id', orderId)
-            newStatus = 'rejected'
+            await supabase.from('orders').update({ status: ORDER_STATUS.REJECTED }).eq('id', orderId)
+            newStatus = ORDER_STATUS.REJECTED
         } else {
             // First step in Two-Step Decline Workflow: propose a decline
-            const payload: any = { status: 'pending_decline' }
+            const payload: any = { status: ORDER_STATUS.PENDING_DECLINE }
             if (declineReason) payload.decline_reason = declineReason
             console.log('Attempting to update order with payload:', payload)
             const { error: updateErr } = await supabase.from('orders').update(payload).eq('id', orderId)
             if (updateErr) console.error('Supabase Update Error:', updateErr)
-            newStatus = 'pending_decline'
+            newStatus = ORDER_STATUS.PENDING_DECLINE
         }
     } else if (grantAccess) {
         // 1. Give Access in customer_modules
@@ -99,8 +100,8 @@ export async function approveModuleAccess(formData: FormData) {
 
         // 2. Mark order approved
         if (orderId) {
-            await supabase.from('orders').update({ status: 'approved' }).eq('id', orderId)
-            newStatus = 'approved'
+            await supabase.from('orders').update({ status: ORDER_STATUS.APPROVED }).eq('id', orderId)
+            newStatus = ORDER_STATUS.APPROVED
         }
     } else {
         // Revoke access

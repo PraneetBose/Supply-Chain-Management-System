@@ -1,6 +1,7 @@
 import { createClient } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
 import SupremeDashboardClient from '../../components/SupremeDashboardClient'
+import { ORDER_STATUS } from '@/lib/constants'
 
 export default async function SupremeDashboard() {
     const supabase = await createClient()
@@ -11,28 +12,28 @@ export default async function SupremeDashboard() {
     if (roleData?.role !== 'supreme_admin') redirect('/login')
 
     const { count: tenantCount } = await supabase.from('customers').select('*', { count: 'exact', head: true })
-    const { count: productsSold } = await supabase.from('orders').select('*', { count: 'exact', head: true }).eq('status', 'approved')
+    const { count: productsSold } = await supabase.from('orders').select('*', { count: 'exact', head: true }).eq('status', ORDER_STATUS.APPROVED)
     const { count: servicesUsed } = await supabase.from('customer_modules').select('*', { count: 'exact', head: true }).eq('is_active', true)
 
     // Fetch Pending Orders
     const { data: pendingOrders } = await supabase
         .from('orders')
         .select(`id, cust_id, status, created_at, modules (id, name)`)
-        .eq('status', 'pending')
+        .eq('status', ORDER_STATUS.PENDING)
         .order('created_at', { ascending: false })
 
     // Fetch Pending Decline Orders (Req Tab)
     const { data: reqOrders } = await supabase
         .from('orders')
         .select(`id, cust_id, status, decline_reason, created_at, modules (id, name)`)
-        .eq('status', 'pending_decline')
+        .eq('status', ORDER_STATUS.PENDING_DECLINE)
         .order('created_at', { ascending: false })
 
     // Fetch Active (Approved) Orders
     const { data: activeOrders } = await supabase
         .from('orders')
         .select(`id, cust_id, status, created_at, modules (id, name)`)
-        .eq('status', 'approved')
+        .eq('status', ORDER_STATUS.APPROVED)
         .order('created_at', { ascending: false })
 
     // Fetch all customers for Directory

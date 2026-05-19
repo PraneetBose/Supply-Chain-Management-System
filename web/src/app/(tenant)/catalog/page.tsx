@@ -1,5 +1,6 @@
 import { createClient } from '@/utils/supabase/server'
 import CatalogClient from './CatalogClient'
+import { ORDER_STATUS } from '@/lib/constants'
 export default async function CatalogPage() {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
@@ -50,7 +51,7 @@ export default async function CatalogPage() {
 
     // Find which ones we already own or requested
     const { data: myModules } = await supabase.from('customer_modules').select('module_id, is_active').eq('cust_id', customer.cust_id)
-    const { data: myOrders } = await supabase.from('orders').select('module_id').eq('cust_id', customer.cust_id).eq('status', 'pending')
+    const { data: myOrders } = await supabase.from('orders').select('module_id').eq('cust_id', customer.cust_id).eq('status', ORDER_STATUS.PENDING)
 
     return (
         <div className="p-8 lg:p-12 max-w-7xl mx-auto">

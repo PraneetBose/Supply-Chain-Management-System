@@ -2,10 +2,11 @@
 import { useState, useEffect } from 'react'
 import { approveModuleAccess } from './actions'
 import { createClient } from '@/utils/supabase/client'
+import { ORDER_STATUS, OrderStatus } from '@/lib/constants'
 
 export default function AdminDashboard({ email, stats }: { email: string, stats: { customers: number, productsSold: number, servicesUsed: number } }) {
     const [activeTab, setActiveTab] = useState<'overview' | 'notifications' | 'manage'>('overview')
-    const [orderTab, setOrderTab] = useState<'pending' | 'active'>('pending')
+    const [orderTab, setOrderTab] = useState<'pending' | 'active'>(ORDER_STATUS.PENDING)
     const [searchQuery, setSearchQuery] = useState('')
 
     const [pendingOrders, setPendingOrders] = useState<any[]>([])
@@ -39,7 +40,7 @@ export default function AdminDashboard({ email, stats }: { email: string, stats:
             const { data: pendingData } = await supabase
                 .from('orders')
                 .select(`id, cust_id, status, created_at, modules (id, name)`)
-                .eq('status', 'pending')
+                .eq('status', ORDER_STATUS.PENDING)
                 .order('created_at', { ascending: false })
 
             if (pendingData) setPendingOrders(pendingData)
@@ -47,7 +48,7 @@ export default function AdminDashboard({ email, stats }: { email: string, stats:
             const { data: activeData } = await supabase
                 .from('orders')
                 .select(`id, cust_id, status, created_at, modules (id, name)`)
-                .eq('status', 'approved')
+                .eq('status', ORDER_STATUS.APPROVED)
                 .order('created_at', { ascending: false })
 
             if (activeData) setActiveOrders(activeData)
@@ -189,9 +190,9 @@ export default function AdminDashboard({ email, stats }: { email: string, stats:
                                                     </button>
                                                     <form action={async (formData) => {
                                                         const res = await approveModuleAccess(formData)
-                                                        if (res && res.success && res.status === 'approved') {
+                                                        if (res && res.success && res.status === ORDER_STATUS.APPROVED) {
                                                             setPendingOrders(prev => prev.filter(o => o.id !== res.orderId))
-                                                            setActiveOrders(prev => [{ ...order, status: 'approved' }, ...prev])
+                                                            setActiveOrders(prev => [{ ...order, status: ORDER_STATUS.APPROVED }, ...prev])
                                                         }
                                                     }}>
                                                         <input type="hidden" name="custId" value={order.cust_id} />
