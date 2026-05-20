@@ -2,6 +2,7 @@
 
 import { createClient } from '@/utils/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { ORDER_STATUS } from '@/lib/constants'
 
 export async function submitCartCheckout(moduleIds: string[], custId: string) {
     if (!moduleIds || moduleIds.length === 0) return { error: 'Cart is empty' }
@@ -14,7 +15,7 @@ export async function submitCartCheckout(moduleIds: string[], custId: string) {
         .select('module_id')
         .eq('cust_id', custId)
         .in('module_id', moduleIds)
-        .eq('status', 'pending')
+        .eq('status', ORDER_STATUS.PENDING)
 
     // 2. Check if they already have ACTIVE access to any of these
     const { data: activeMods } = await supabase
@@ -32,7 +33,7 @@ export async function submitCartCheckout(moduleIds: string[], custId: string) {
     const ordersToInsert = moduleIds.map(modId => ({
         cust_id: custId,
         module_id: modId,
-        status: 'pending'
+        status: ORDER_STATUS.PENDING
     }))
 
     const { error: insertError } = await supabase

@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { submitOrder } from './actions'
 import { createClient } from '@/utils/supabase/client'
 import Link from 'next/link'
+import { ORDER_STATUS } from '@/lib/constants'
 
 export default function CustomerDashboard({ customer }: { customer: any }) {
     const [modules, setModules] = useState<any[]>([])
@@ -29,7 +30,7 @@ export default function CustomerDashboard({ customer }: { customer: any }) {
                 .from('orders')
                 .select('*')
                 .eq('cust_id', customer.cust_id)
-                .in('status', ['pending'])
+                .in('status', [ORDER_STATUS.PENDING])
             if (pending) setPendingOrders(pending)
         }
         loadData()

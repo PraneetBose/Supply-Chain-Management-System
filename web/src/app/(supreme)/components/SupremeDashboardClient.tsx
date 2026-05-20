@@ -3,10 +3,11 @@
 import { useState, useEffect } from 'react'
 import { searchCustomerByCustId, changeUserRole, toggleModuleAccess, updateModulePrice } from './actions'
 import { approveModuleAccess } from '@/app/components/actions'
+import { ORDER_STATUS } from '@/lib/constants'
 
 export default function SupremeDashboardClient({ initialOrders: serverInitialOrders, activeOrders: serverActiveOrders, reqOrders: serverReqOrders, allCustomers, allModules }: { initialOrders: any[], activeOrders: any[], reqOrders: any[], allCustomers: any[], allModules: any[] }) {
     const [activeTab, setActiveTab] = useState<'orders' | 'manage' | 'pricing'>('orders')
-    const [orderTab, setOrderTab] = useState<'pending' | 'active' | 'req'>('pending')
+    const [orderTab, setOrderTab] = useState<'pending' | 'active' | 'req'>(ORDER_STATUS.PENDING)
 
     // Manage local order state for optimistic UI updates
     const [initialOrders, setInitialOrders] = useState(serverInitialOrders)
@@ -164,9 +165,9 @@ export default function SupremeDashboardClient({ initialOrders: serverInitialOrd
                                                 </form>
                                                 <form action={async (formData) => {
                                                     const res = await approveModuleAccess(formData)
-                                                    if (res && res.success && res.status === 'approved') {
+                                                    if (res && res.success && res.status === ORDER_STATUS.APPROVED) {
                                                         setInitialOrders(prev => prev.filter(o => o.id !== res.orderId))
-                                                        setActiveOrders(prev => [{ ...order, status: 'approved' }, ...prev])
+                                                        setActiveOrders(prev => [{ ...order, status: ORDER_STATUS.APPROVED }, ...prev])
                                                     }
                                                 }}>
                                                     <input type="hidden" name="custId" value={order.cust_id} />
@@ -250,9 +251,9 @@ export default function SupremeDashboardClient({ initialOrders: serverInitialOrd
                                                 </form>
                                                 <form action={async (formData) => {
                                                     const res = await approveModuleAccess(formData)
-                                                    if (res && res.success && res.status === 'approved') {
+                                                    if (res && res.success && res.status === ORDER_STATUS.APPROVED) {
                                                         setReqOrders(prev => prev.filter(o => o.id !== res.orderId))
-                                                        setActiveOrders(prev => [{ ...order, status: 'approved' }, ...prev])
+                                                        setActiveOrders(prev => [{ ...order, status: ORDER_STATUS.APPROVED }, ...prev])
                                                     }
                                                 }} className="flex-1 md:flex-none">
                                                     <input type="hidden" name="custId" value={order.cust_id} />
