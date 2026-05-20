@@ -44,20 +44,6 @@ export async function submitOrder(moduleId: string, custId: string) {
     revalidatePath('/')
     return { success: true }
 }
-
-export async function runMigration() {
-    const { Client } = require('pg');
-    const client = new Client({ connectionString: process.env.DATABASE_URL });
-    await client.connect();
-    await client.query('ALTER TABLE IF EXISTS public.orders ADD COLUMN IF NOT EXISTS decline_reason TEXT');
-    await client.query(`
-        ALTER TABLE public.orders DROP CONSTRAINT IF EXISTS orders_status_check;
-        ALTER TABLE public.orders ADD CONSTRAINT orders_status_check CHECK (status IN ('pending', 'approved', 'rejected', 'pending_decline'));
-    `);
-    await client.end();
-    return { success: true };
-}
-
 export async function approveModuleAccess(formData: FormData) {
     const supabase = await createClient()
 
