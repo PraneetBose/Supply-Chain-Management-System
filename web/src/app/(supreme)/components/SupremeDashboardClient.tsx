@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { searchCustomerByCustId, changeUserRole, toggleModuleAccess, updateModulePrice } from './actions'
 import { approveModuleAccess } from '@/app/components/actions'
 import { ORDER_STATUS } from '@/lib/constants'
+import toast from 'react-hot-toast'
 
 export default function SupremeDashboardClient({ initialOrders: serverInitialOrders, activeOrders: serverActiveOrders, reqOrders: serverReqOrders, allCustomers, allModules }: { initialOrders: any[], activeOrders: any[], reqOrders: any[], allCustomers: any[], allModules: any[] }) {
     const [activeTab, setActiveTab] = useState<'orders' | 'manage' | 'pricing'>('orders')
@@ -63,13 +64,14 @@ export default function SupremeDashboardClient({ initialOrders: serverInitialOrd
     }
 
     async function handlePriceUpdate(moduleId: string, newPrice: number) {
-        if (newPrice < 0) return alert('Price cannot be negative')
+        if (newPrice < 0) return toast.error('Price cannot be negative')
         setLoading(true)
         const result = await updateModulePrice(moduleId, newPrice)
         if (result.error) {
             setError(result.error)
+            toast.error(result.error)
         } else {
-            alert('Price updated successfully')
+            toast.success('Price updated successfully')
         }
         setLoading(false)
     }
@@ -150,10 +152,21 @@ export default function SupremeDashboardClient({ initialOrders: serverInitialOrd
                                             </div>
                                             <div className="flex gap-2 mt-4 md:mt-0">
                                                 <form action={async (formData) => {
-                                                    const res = await approveModuleAccess(formData)
-                                                    if (res && res.success) {
+                                                    const actionPromise = approveModuleAccess(formData).then(res => {
+                                                        if (!res || !res.success) throw new Error('Failed to decline order')
+                                                        return res
+                                                    })
+
+                                                    toast.promise(actionPromise, {
+                                                        loading: 'Declining order...',
+                                                        success: 'Order declined successfully.',
+                                                        error: (err) => err.message
+                                                    }, { id: 'supreme-decline' })
+
+                                                    try {
+                                                        const res = await actionPromise
                                                         setInitialOrders(prev => prev.filter(o => o.id !== res.orderId))
-                                                    }
+                                                    } catch(e) {}
                                                 }}>
                                                     <input type="hidden" name="custId" value={order.cust_id} />
                                                     <input type="hidden" name="moduleId" value={order.modules?.id} />
@@ -164,11 +177,24 @@ export default function SupremeDashboardClient({ initialOrders: serverInitialOrd
                                                     </button>
                                                 </form>
                                                 <form action={async (formData) => {
-                                                    const res = await approveModuleAccess(formData)
-                                                    if (res && res.success && res.status === ORDER_STATUS.APPROVED) {
-                                                        setInitialOrders(prev => prev.filter(o => o.id !== res.orderId))
-                                                        setActiveOrders(prev => [{ ...order, status: ORDER_STATUS.APPROVED }, ...prev])
-                                                    }
+                                                    const actionPromise = approveModuleAccess(formData).then(res => {
+                                                        if (!res || !res.success) throw new Error('Failed to provision access')
+                                                        return res
+                                                    })
+
+                                                    toast.promise(actionPromise, {
+                                                        loading: 'Provisioning access...',
+                                                        success: 'Order provisioned successfully.',
+                                                        error: (err) => err.message
+                                                    }, { id: 'supreme-provision' })
+
+                                                    try {
+                                                        const res = await actionPromise
+                                                        if (res.status === ORDER_STATUS.APPROVED) {
+                                                            setInitialOrders(prev => prev.filter(o => o.id !== res.orderId))
+                                                            setActiveOrders(prev => [{ ...order, status: ORDER_STATUS.APPROVED }, ...prev])
+                                                        }
+                                                    } catch(e) {}
                                                 }}>
                                                     <input type="hidden" name="custId" value={order.cust_id} />
                                                     <input type="hidden" name="moduleId" value={order.modules?.id} />
@@ -235,10 +261,21 @@ export default function SupremeDashboardClient({ initialOrders: serverInitialOrd
                                             </div>
                                             <div className="flex gap-2 w-full md:w-auto">
                                                 <form action={async (formData) => {
-                                                    const res = await approveModuleAccess(formData)
-                                                    if (res && res.success) {
+                                                    const actionPromise = approveModuleAccess(formData).then(res => {
+                                                        if (!res || !res.success) throw new Error('Failed to reject order')
+                                                        return res
+                                                    })
+
+                                                    toast.promise(actionPromise, {
+                                                        loading: 'Finalizing rejection...',
+                                                        success: 'Decline request finalized.',
+                                                        error: (err) => err.message
+                                                    }, { id: 'supreme-reject' })
+
+                                                    try {
+                                                        const res = await actionPromise
                                                         setReqOrders(prev => prev.filter(o => o.id !== res.orderId))
-                                                    }
+                                                    } catch(e) {}
                                                 }} className="flex-1 md:flex-none">
                                                     <input type="hidden" name="custId" value={order.cust_id} />
                                                     <input type="hidden" name="moduleId" value={order.modules?.id} />
@@ -250,11 +287,24 @@ export default function SupremeDashboardClient({ initialOrders: serverInitialOrd
                                                     </button>
                                                 </form>
                                                 <form action={async (formData) => {
-                                                    const res = await approveModuleAccess(formData)
-                                                    if (res && res.success && res.status === ORDER_STATUS.APPROVED) {
-                                                        setReqOrders(prev => prev.filter(o => o.id !== res.orderId))
-                                                        setActiveOrders(prev => [{ ...order, status: ORDER_STATUS.APPROVED }, ...prev])
-                                                    }
+                                                    const actionPromise = approveModuleAccess(formData).then(res => {
+                                                        if (!res || !res.success) throw new Error('Failed to override order')
+                                                        return res
+                                                    })
+
+                                                    toast.promise(actionPromise, {
+                                                        loading: 'Overriding and approving...',
+                                                        success: 'Order overridden and approved successfully.',
+                                                        error: (err) => err.message
+                                                    }, { id: 'supreme-override' })
+
+                                                    try {
+                                                        const res = await actionPromise
+                                                        if (res.status === ORDER_STATUS.APPROVED) {
+                                                            setReqOrders(prev => prev.filter(o => o.id !== res.orderId))
+                                                            setActiveOrders(prev => [{ ...order, status: ORDER_STATUS.APPROVED }, ...prev])
+                                                        }
+                                                    } catch(e) {}
                                                 }} className="flex-1 md:flex-none">
                                                     <input type="hidden" name="custId" value={order.cust_id} />
                                                     <input type="hidden" name="moduleId" value={order.modules?.id} />
