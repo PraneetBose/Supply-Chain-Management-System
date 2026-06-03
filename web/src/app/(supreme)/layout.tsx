@@ -32,6 +32,10 @@ export default async function SupremeLayout({
                         <Link href="/supreme/dashboard?tab=pricing" className="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors">
                             Pricing Manager
                         </Link>
+                        <div className="border-t border-zinc-800 my-3"></div>
+                        <Link href="/supreme/migrate" className="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg text-zinc-500 hover:text-amber-400 hover:bg-zinc-800 transition-colors">
+                            Run Migrations
+                        </Link>
                     </nav>
                 </div>
 

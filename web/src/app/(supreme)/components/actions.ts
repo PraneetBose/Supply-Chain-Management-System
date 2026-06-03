@@ -109,6 +109,30 @@ export async function toggleModuleAccess(custId: string, moduleId: string, curre
     return { success: true }
 }
 
+// Supreme Admin Only: Run database migrations (blocked in production)
+export async function runMigration() {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { error: 'Unauthorized' }
+    const { data: roleData } = await supabase.from('user_roles').select('role').eq('id', user.id).single()
+    if (roleData?.role !== 'supreme_admin') return { error: 'Unauthorized' }
+
+    if (process.env.NODE_ENV === 'production') {
+        return { error: 'Migrations cannot be run in production. Use Supabase CLI instead.' }
+    }
+
+    const { Client } = require('pg');
+    const client = new Client({ connectionString: process.env.DATABASE_URL });
+    await client.connect();
+    await client.query('ALTER TABLE IF EXISTS public.orders ADD COLUMN IF NOT EXISTS decline_reason TEXT');
+    await client.query(`
+        ALTER TABLE public.orders DROP CONSTRAINT IF EXISTS orders_status_check;
+        ALTER TABLE public.orders ADD CONSTRAINT orders_status_check CHECK (status IN ('pending', 'approved', 'rejected', 'pending_decline'));
+    `);
+    await client.end();
+    return { success: true };
+}
+
 // Supreme Admin Only: Update module base price
 export async function updateModulePrice(moduleId: string, newPrice: number) {
     const supabase = await createClient()
