@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { approveModuleAccess } from './actions'
 import { createClient } from '@/utils/supabase/client'
 import { ORDER_STATUS, OrderStatus } from '@/lib/constants'
+import toast from 'react-hot-toast'
 
 export default function AdminDashboard({ email, stats }: { email: string, stats: { customers: number, productsSold: number, servicesUsed: number } }) {
     const [activeTab, setActiveTab] = useState<'overview' | 'notifications' | 'manage'>('overview')
@@ -82,7 +83,7 @@ export default function AdminDashboard({ email, stats }: { email: string, stats:
             setCustomerModules(custMods || [])
         } else {
             setSearchResult(null)
-            alert('Customer ID not found')
+            toast.error('Customer ID not found')
         }
     }
 
@@ -189,11 +190,24 @@ export default function AdminDashboard({ email, stats }: { email: string, stats:
                                                         Decline
                                                     </button>
                                                     <form action={async (formData) => {
-                                                        const res = await approveModuleAccess(formData)
-                                                        if (res && res.success && res.status === ORDER_STATUS.APPROVED) {
-                                                            setPendingOrders(prev => prev.filter(o => o.id !== res.orderId))
-                                                            setActiveOrders(prev => [{ ...order, status: ORDER_STATUS.APPROVED }, ...prev])
-                                                        }
+                                                        const actionPromise = approveModuleAccess(formData).then(res => {
+                                                            if (!res || !res.success) throw new Error('Failed to approve order')
+                                                            return res
+                                                        })
+                                                        
+                                                        toast.promise(actionPromise, {
+                                                            loading: 'Approving order...',
+                                                            success: 'Order approved and access granted!',
+                                                            error: (err) => err.message
+                                                        }, { id: 'approve-order' })
+
+                                                        try {
+                                                            const res = await actionPromise
+                                                            if (res.status === ORDER_STATUS.APPROVED) {
+                                                                setPendingOrders(prev => prev.filter(o => o.id !== res.orderId))
+                                                                setActiveOrders(prev => [{ ...order, status: ORDER_STATUS.APPROVED }, ...prev])
+                                                            }
+                                                        } catch(e) {}
                                                     }}>
                                                         <input type="hidden" name="custId" value={order.cust_id} />
                                                         <input type="hidden" name="moduleId" value={order.modules?.id} />
@@ -371,12 +385,23 @@ export default function AdminDashboard({ email, stats }: { email: string, stats:
                             </button>
                         </div>
                         <form action={async (formData) => {
-                            const res = await approveModuleAccess(formData)
-                            if (res && res.success) {
+                            const actionPromise = approveModuleAccess(formData).then(res => {
+                                if (!res || !res.success) throw new Error('Failed to submit decline')
+                                return res
+                            })
+
+                            toast.promise(actionPromise, {
+                                loading: 'Submitting decline...',
+                                success: 'Decline proposal submitted successfully.',
+                                error: (err) => err.message
+                            }, { id: 'decline-order' })
+
+                            try {
+                                const res = await actionPromise
                                 setPendingOrders(prev => prev.filter(o => o.id !== res.orderId))
                                 setDeclineModalOpen(null)
                                 setDeclineReason('')
-                            }
+                            } catch(e) {}
                         }} className="p-6">
                             <input type="hidden" name="custId" value={declineModalOpen.cust_id} />
                             <input type="hidden" name="moduleId" value={declineModalOpen.modules?.id} />

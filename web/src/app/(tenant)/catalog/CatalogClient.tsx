@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { submitCartCheckout } from './actions'
+import toast from 'react-hot-toast'
 
 type Module = {
     id: string
@@ -36,14 +37,31 @@ export default function CatalogClient({ modules, myModules, myOrders, custId }: 
         setSuccessMessage('')
 
         const moduleIds = cart.map(m => m.id)
-        const result = await submitCartCheckout(moduleIds, custId)
+        
+        const checkoutPromise = submitCartCheckout(moduleIds, custId).then(result => {
+            if (result.error) throw new Error(result.error)
+            return result
+        })
 
-        if (result.error) {
-            alert(result.error)
-            setIsCheckingOut(false)
-        } else {
+        toast.promise(
+            checkoutPromise,
+            {
+                loading: 'Processing your order...',
+                success: 'Checkout successful!',
+                error: (err) => err.message || 'Failed to process order'
+            },
+            {
+                id: 'checkout-toast'
+            }
+        )
+
+        try {
+            await checkoutPromise
             setCart([])
             setSuccessMessage('Checkout successful! Orders have been submitted to Administration for provisioning.')
+        } catch (error) {
+            // Handled by toast.promise
+        } finally {
             setIsCheckingOut(false)
         }
     }
