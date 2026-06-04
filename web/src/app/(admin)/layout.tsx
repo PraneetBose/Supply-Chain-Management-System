@@ -1,3 +1,4 @@
+import { redirect } from 'next/navigation'
 import { createClient } from '@/utils/supabase/server'
 import Link from 'next/link'
 import { ORDER_STATUS } from '@/lib/constants'
@@ -9,6 +10,19 @@ export default async function AdminLayout({
 }) {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+    redirect('/login')
+}
+
+const { data: roleData } = await supabase
+    .from('user_roles')
+    .select('role')
+    .eq('id', user.id)
+    .single()
+
+if (roleData?.role !== 'admin' && roleData?.role !== 'supreme_admin') {
+    redirect('/dashboard')
+}
 
     // Get pending order count for the notification badge
     const { count } = await supabase.from('orders').select('*', { count: 'exact', head: true }).eq('status', ORDER_STATUS.PENDING)
@@ -19,7 +33,7 @@ export default async function AdminLayout({
             <aside className="w-64 bg-zinc-900 border-r border-zinc-800 flex flex-col shrink-0">
                 <div className="p-6 border-b border-zinc-800">
                     <div className="font-bold text-xl tracking-tight mb-1 text-emerald-400">Admin Portal</div>
-                    <div className="text-xs text-zinc-500 font-mono truncate">{user?.email}</div>
+                    <div className="text-xs text-zinc-500 font-mono truncate">{user.email}</div>
                 </div>
 
                 <div className="flex-1 overflow-y-auto py-4">

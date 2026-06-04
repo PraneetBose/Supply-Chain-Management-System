@@ -1,3 +1,4 @@
+import { redirect } from 'next/navigation'
 import { createClient } from '@/utils/supabase/server'
 import Link from 'next/link'
 
@@ -8,6 +9,19 @@ export default async function SupremeLayout({
 }) {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+    redirect('/login')
+}
+
+const { data: roleData } = await supabase
+    .from('user_roles')
+    .select('role')
+    .eq('id', user.id)
+    .single()
+
+if (roleData?.role !== 'supreme_admin') {
+    redirect('/dashboard')
+}
 
     return (
         <div className="flex h-screen bg-zinc-950 font-sans text-white overflow-hidden">
