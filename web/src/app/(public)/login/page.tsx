@@ -1,10 +1,20 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, Suspense } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { login, signup } from './actions'
 
-export default function LoginPage() {
+function LoginContent() {
+    const searchParams = useSearchParams()
     const [isLogin, setIsLogin] = useState(true)
+
+    useEffect(() => {
+        if (searchParams.get('mode') === 'signup') {
+            setIsLogin(false)
+        } else {
+            setIsLogin(true)
+        }
+    }, [searchParams])
 
     return (
         <div className="flex min-h-screen items-center justify-center bg-zinc-950 p-4 relative overflow-hidden">
@@ -128,3 +138,16 @@ export default function LoginPage() {
         </div>
     )
 }
+
+export default function LoginPage() {
+    return (
+        <Suspense fallback={
+            <div className="flex min-h-screen items-center justify-center bg-zinc-950 p-4 text-white">
+                Loading...
+            </div>
+        }>
+            <LoginContent />
+        </Suspense>
+    )
+}
+
